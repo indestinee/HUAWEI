@@ -6,7 +6,7 @@
 #include <string>
 #include <iostream>
 using namespace std;
-//#define DEBUG
+#define DEBUG
 #define prev prevDSJAIOIOWD
 #define TIME (double(clock())/double(CLOCKS_PER_SEC))
 const int maxm = 210000, inf = 0x63636363, maxn = 4024, my_favority_number = 91203;
@@ -191,10 +191,12 @@ inline string find() {/*{{{*/
     out.push_back(dist[sink]);
     out.push_back(u - node_num);
     while (u != source) {
+        //each_flow[u] += e[pree[u] ^ 1].w * cut;
         u = prev[u];
+        if (u == source)
+            break;
         e[pree[u]].f -= cut;
-        if (u != source)
-            out.push_back(u);
+        out.push_back(u);
     }
     reverse(out.begin(), out.end());
     for (auto i: out)
@@ -271,8 +273,8 @@ inline void best_out() {/*{{{*/
 }/*}}}*/
 inline void insert(int num = 1) {/*{{{*/
     sort(rest_vec.begin(), rest_vec.end(), cmp2);
-    int random = num >> 1, well = 0, good = num - random - well;
-    good = num >> 2, random = num - good;
+    int random =  num >> 1, well = 0, good = num - random - well;
+    good = min(num >> 2, 100), random = num - good;
     while (good) {
         if (rest_vec.size() == 0)
             return;
@@ -336,7 +338,7 @@ void work_iterator() {/*{{{*/
     while (TIME < 88) {
         int res = work();
         if (res == -1) {
-            insert(5);
+            insert(10);
         } else {
             if (res == 0)
                 cnt++;
