@@ -10,7 +10,8 @@ using namespace std;
 #define prev prevDSJAIOIOWD
 #define TIME (double(clock())/double(CLOCKS_PER_SEC))
 const int maxm = 210000, inf = 0x63636363, maxn = 4024, my_favority_number = 91203;
-int node_num, edge_num, sink_num, server_cost, totle_flow, ans, source, sink, nume, flow, used, st[maxm], ed[maxm], limit[maxm], cost[maxm], sink_node[maxn], father[maxn], need[maxn], g[maxn], dist[maxn], prev[maxn], pree[maxn], vis[maxn], out_flow[maxn], id[maxn], que[maxn], qst, qed, limit_best_time, each_flow[maxn];
+const double rate = 1;
+int node_num, edge_num, sink_num, server_cost, totle_flow, ans, source, sink, nume, flow, used, st[maxm], ed[maxm], limit[maxm], cost[maxm], sink_node[maxn], father[maxn], need[maxn], g[maxn], dist[maxn], prev[maxn], pree[maxn], vis[maxn], out_flow[maxn], id[maxn], que[maxn], qst, qed, limit_best_time, each_flow[maxn], score[maxn];
 string res;
 vector<int> random_pick, out, source_vec, rest_vec, best_vec;
 bool inque[maxn];
@@ -44,6 +45,16 @@ inline void init(char *topo[MAX_EDGE_NUM]) {/*{{{*/
         sscanf(topo[i + 5 + edge_num], "%d%d%d", &sink_node[i], &father[i], &need[i]);
         totle_flow += need[i];
         out_flow[father[i]] += need[i];
+    }
+    for (int i = 0; i < edge_num; i++) {
+        double r = 1;
+        for (int j = g[i]; j; j = e[j].nxt) {
+            if (j >= node_num && j < source) {
+                r = rate;
+                break;
+            }
+        }
+        score[i] = out_flow[i] * rate;
     }
 }/*}}}*/
 inline void addedge(const int &u, const int &v, const int &c, const int &w) {/*{{{*/
@@ -212,9 +223,12 @@ inline bool cmp(const int &a, const int &b) {/*{{{*/
 inline bool cmp1(const int &a, const int &b) {/*{{{*/
     return each_flow[a] > each_flow[b];
 }/*}}}*/
-inline bool cmp2(const int &a, const int &b) {
+inline bool cmp2(const int &a, const int &b) {/*{{{*/
     return each_flow[a] < each_flow[b];
-}
+}/*}}}*/
+inline bool cmp3(const int &a, const int &b) {/*{{{*/
+    return score[a] < score[b];
+}/*}}}*/
 inline int work() {/*{{{*/
     int totle = 0;
     for (auto i: source_vec)
@@ -257,7 +271,8 @@ inline void best_out() {/*{{{*/
 }/*}}}*/
 inline void insert(int num = 1) {/*{{{*/
     sort(rest_vec.begin(), rest_vec.end(), cmp2);
-    int random = num >> 1, good = num - random;
+    int random = num >> 1, well = 0, good = num - random - well;
+    good = num >> 2, random = num - good;
     while (good) {
         if (rest_vec.size() == 0)
             return;
@@ -269,6 +284,15 @@ inline void insert(int num = 1) {/*{{{*/
         rest_vec.pop_back();
         good--;
     }
+    sort(rest_vec.begin(), rest_vec.end(), cmp3);
+    while (well) {
+        if (rest_vec.size() == 0)
+            return;
+        source_vec.push_back(*rest_vec.rbegin());
+        rest_vec.pop_back();
+        well--;
+    }
+
     while (random--) {
         if (rest_vec.size() == 0)
             return;
@@ -312,17 +336,17 @@ void work_iterator() {/*{{{*/
     while (TIME < 88) {
         int res = work();
         if (res == -1) {
-            insert(2);
+            insert(5);
         } else {
             if (res == 0)
                 cnt++;
             sort(source_vec.begin(), source_vec.end(), cmp1);
-            pop_back(2);
+            pop_back(5);
         }
         if (res == 1) {
             cnt = 0;
         } else {
-            if (cnt == 100) {
+            if (cnt == 50) {
                 insert(100);
                 cnt = 0;
             } else if (cnt % 20 == 0) {
