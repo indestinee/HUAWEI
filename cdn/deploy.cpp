@@ -3,6 +3,7 @@
 #include <cstring>
 #include <algorithm>
 #include <queue>
+#include <cmath>
 #include <string>
 #include <iostream>
 using namespace std;
@@ -10,10 +11,10 @@ using namespace std;
 #define prev prevDSJAIOIOWD
 #define TIME (double(clock())/double(CLOCKS_PER_SEC))
 const int maxm = 210000, inf = 0x63636363, maxn = 4024, my_favority_number = 91203;
-const double rate = 1;
-int node_num, edge_num, sink_num, server_cost, totle_flow, ans, source, sink, nume, flow, used, st[maxm], ed[maxm], limit[maxm], cost[maxm], sink_node[maxn], father[maxn], need[maxn], g[maxn], dist[maxn], prev[maxn], pree[maxn], vis[maxn], out_flow[maxn], id[maxn], que[maxn], qst, qed, limit_best_time, each_flow[maxn], score[maxn];
+const double log_rand_max = log(RAND_MAX), rate = 1;
+int node_num, edge_num, sink_num, server_cost, totle_flow, ans, source, sink, nume, flow, used, st[maxm], ed[maxm], limit[maxm], cost[maxm], sink_node[maxn], father[maxn], need[maxn], g[maxn], dist[maxn], prev[maxn], pree[maxn], vis[maxn], out_flow[maxn], id[maxn], que[maxn], qst, qed, limit_best_time, each_flow[maxn], score[maxn], max_sink, is_near_sink[maxn], last_sink;
 string res;
-vector<int> random_pick, out, source_vec, rest_vec, best_vec;
+vector<int> out, source_vec, rest_vec, best_vec, sink_vec;
 bool inque[maxn];
 char buff[1 << 20];
 class edge{/*{{{*/
@@ -45,6 +46,7 @@ inline void init(char *topo[MAX_EDGE_NUM]) {/*{{{*/
         sscanf(topo[i + 5 + edge_num], "%d%d%d", &sink_node[i], &father[i], &need[i]);
         totle_flow += need[i];
         out_flow[father[i]] += need[i];
+        is_near_sink[father[i]] = 1;
     }
     for (int i = 0; i < edge_num; i++) {
         double r = 1;
@@ -246,6 +248,7 @@ inline int work() {/*{{{*/
         return -1;
     tmp += used * server_cost;
     if (tmp < ans) {
+        last_sink = used;
         ans = tmp;
         update(res);
         return 1;
@@ -272,9 +275,9 @@ inline void best_out() {/*{{{*/
     }
 }/*}}}*/
 inline void insert(int num = 1) {/*{{{*/
-    num = max(num, 1);
+    num = max(num, 5);
     sort(rest_vec.begin(), rest_vec.end(), cmp2);
-    int random =  num >> 1, well = 0, good = num - random - well;
+    int random =  num >> 1, well = 2, good = num - random - well;
     good = min(num >> 2, 100), random = num - good;
     while (good) {
         if (rest_vec.size() == 0)
@@ -291,6 +294,8 @@ inline void insert(int num = 1) {/*{{{*/
     while (well) {
         if (rest_vec.size() == 0)
             return;
+        int pick = log(max(rand(), 1)) / log_rand_max * rest_vec.size();
+        swap(rest_vec[rest_vec.size() - 1], rest_vec[pick]);
         source_vec.push_back(*rest_vec.rbegin());
         rest_vec.pop_back();
         well--;
@@ -312,7 +317,21 @@ inline void pop_back(int num = 1) {/*{{{*/
         source_vec.pop_back();
     }
 }/*}}}*/
-void work_iterator() {/*{{{*/
+inline void add_some_sink(int n) {/*{{{*/
+    random_shuffle(rest_vec.begin(), rest_vec.end());
+    int cnt = 0, m = rest_vec.size();
+    for (int i = 0; i < m; i++) {
+        if (is_near_sink[rest_vec[i]]) {
+            source_vec.push_back(rest_vec[i]);
+            swap(rest_vec[i], rest_vec[m - 1]);
+            rest_vec.pop_back();
+            m--;
+            if (++cnt == n)
+                break;
+        }
+    }       
+}/*}}}*/
+inline void work_iterator() {/*{{{*/
     source_vec.clear();
 
 //    for (int i = 0; i < node_num; i++)
@@ -338,6 +357,7 @@ void work_iterator() {/*{{{*/
 
     int cnt = 0;
     while (TIME < 88) {
+        
         int res = work();
         if (res == -1) {
             insert(source_vec.size() * 0.10);
@@ -351,12 +371,14 @@ void work_iterator() {/*{{{*/
             cnt = 0;
         } else {
             if (cnt == 30) {
-                insert(source_vec.size() * 0.3);
+                insert(max(20, int(source_vec.size() * 0.3)));
                 cnt = 0;
             }
         }
+        if (double(source_vec.size()) / last_sink <= 0.8)
+            add_some_sink(last_sink * 0.5);
 #ifdef DEBUG
-        cerr << TIME << " : " << ans << " " << source_vec.size() << " " << cnt << endl;
+        cerr << TIME << " : " << ans << " " << source_vec.size() << " " << last_sink << " " << cnt << endl;
 #endif
     }
 }/*}}}*/
@@ -364,6 +386,8 @@ void deploy_server(char *topo[MAX_EDGE_NUM], int line_num,char *filename) {/*{{{
     srand(time(0) + clock() + my_favority_number);
     ans = inf;
     init(topo);
+    for (int i = 0; i < sink_num; i++)
+        sink_vec.push_back(father[i]);
 #ifndef DEBUG
     limit_best_time = 15;
 #else
@@ -371,6 +395,8 @@ void deploy_server(char *topo[MAX_EDGE_NUM], int line_num,char *filename) {/*{{{
 #endif
 
     best_out();
+     max_sink = ans / server_cost;
+    
 #ifdef DEBUG
     cerr << ans << " " << TIME << " " << server_cost * sink_num << " " << server_cost << "  "<< sink_num << endl;
 #endif
