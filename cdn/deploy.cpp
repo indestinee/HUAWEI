@@ -273,21 +273,49 @@ inline void pop_back() {/*{{{*/
     }
 }/*}}}*/
 void work_iterator() {/*{{{*/
-    for (int i = 0; i < node_num; i++)
-        rest_vec.push_back(i);
-    //random_shuffle(rest_vec.begin(), rest_vec.end());
-    sort(rest_vec.begin(), rest_vec.end(), cmp);
-    reverse(rest_vec.begin(), rest_vec.end());
+    source_vec.clear();
 
+//    for (int i = 0; i < node_num; i++)
+//        rest_vec.push_back(i);
+    
+//    random_shuffle(rest_vec.begin(), rest_vec.end());
+    
+//    sort(rest_vec.begin(), rest_vec.end(), cmp);
+//    reverse(rest_vec.begin(), rest_vec.end());
+//    for (int i = 0; i < sink_num; i++)
+//        insert();
 
-    for (int i = 0; i < sink_num; i++)
-        insert();
-    while (TIME < 88) {
-        if (work() == -1) {
-            insert(1);
+    sort(best_vec.begin(), best_vec.end());
+    int id = 0;
+    for (int i = 0; i < node_num; i++) {
+        if (id < int(best_vec.size()) && i == best_vec[id]) {
+            source_vec.push_back(i);
+            id++;
         } else {
+            rest_vec.push_back(i);   
+        }
+    }
+
+    int cnt = 0;
+    while (TIME < 88) {
+        int res = work();
+        if (res == -1) {
+            insert(1);
+            cnt++;
+        } else {
+            if (res == 0)
+                cnt++;
+            if (res == 1)
+                cnt--;
             sort(source_vec.begin(), source_vec.end(), cmp1);
             pop_back();
+        }
+        if (res != 1 && cnt >= 20) {
+            cnt = 0;
+            sort(rest_vec.begin(), rest_vec.end(), cmp);
+            reverse(rest_vec.begin(), rest_vec.end());
+            for (int i = 0; i < 10; i++)
+                insert();
         }
 #ifdef DEBUG
         cerr << TIME << " : " << ans << " " << source_vec.size() << endl;
@@ -301,7 +329,7 @@ void deploy_server(char *topo[MAX_EDGE_NUM], int line_num,char *filename) {/*{{{
 #ifndef DEBUG
     limit_best_time = 10;
 #else
-    limit_best_time = 40;
+    limit_best_time = 15;
 #endif
 
     best_out();
