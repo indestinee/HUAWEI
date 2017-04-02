@@ -1,0 +1,3 @@
+/Users/indestinee/Code/GitHub/HUAWEI/build/CMakeFiles/rebuild_cache.dir
+/Users/indestinee/Code/GitHub/HUAWEI/build/CMakeFiles/edit_cache.dir
+/Users/indestinee/Code/GitHub/HUAWEI/build/CMakeFiles/cdn.dir
