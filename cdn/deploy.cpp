@@ -212,6 +212,9 @@ inline bool cmp(const int &a, const int &b) {/*{{{*/
 inline bool cmp1(const int &a, const int &b) {/*{{{*/
     return each_flow[a] > each_flow[b];
 }/*}}}*/
+inline bool cmp2(const int &a, const int &b) {
+    return each_flow[a] < each_flow[b];
+}
 inline int work() {/*{{{*/
     int totle = 0;
     for (auto i: source_vec)
@@ -252,24 +255,33 @@ inline void best_out() {/*{{{*/
             break;
     }
 }/*}}}*/
-inline void insert(int flag = 0) {/*{{{*/
-    if (rest_vec.size() == 0)
-        return;
-    source_vec.push_back(*rest_vec.rbegin());
-    rest_vec.pop_back();
-    if (flag && rest_vec.size() > 1) {
+inline void insert(int num = 1) {/*{{{*/
+    sort(rest_vec.begin(), rest_vec.end(), cmp2);
+    int random = num >> 1, good = num - random;
+    while (good) {
+        if (rest_vec.size() == 0)
+            return;
+        if (each_flow[*rest_vec.rbegin()] == 0) {
+            random += good;
+            break;
+        }
+        source_vec.push_back(*rest_vec.rbegin());
+        rest_vec.pop_back();
+        good--;
+    }
+    while (random--) {
+        if (rest_vec.size() == 0)
+            return;
         int x = rand() % rest_vec.size();
-        swap(rest_vec[x], rest_vec[rest_vec.size() - 1]);
+        swap(rest_vec[rest_vec.size() - 1], rest_vec[x]);
+        source_vec.push_back(*rest_vec.rbegin());
+        rest_vec.pop_back();
     }
 }/*}}}*/
-inline void pop_back() {/*{{{*/
-    if (source_vec.size() == 0)
-        return;
-    rest_vec.push_back(*source_vec.rbegin());
-    source_vec.pop_back();
-    if (rest_vec.size() > 1) {
-        int x = rand() % rest_vec.size();
-        swap(rest_vec[x], rest_vec[rest_vec.size() - 1]);
+inline void pop_back(int num = 1) {/*{{{*/
+    while (num-- && !source_vec.empty()) {
+        rest_vec.push_back(*source_vec.rbegin());
+        source_vec.pop_back();
     }
 }/*}}}*/
 void work_iterator() {/*{{{*/
@@ -300,25 +312,25 @@ void work_iterator() {/*{{{*/
     while (TIME < 88) {
         int res = work();
         if (res == -1) {
-            insert(1);
-            cnt++;
+            insert(2);
         } else {
             if (res == 0)
                 cnt++;
-            if (res == 1)
-                cnt--;
             sort(source_vec.begin(), source_vec.end(), cmp1);
-            pop_back();
+            pop_back(2);
         }
-        if (res != 1 && cnt >= 20) {
+        if (res == 1) {
             cnt = 0;
-            sort(rest_vec.begin(), rest_vec.end(), cmp);
-            reverse(rest_vec.begin(), rest_vec.end());
-            for (int i = 0; i < 10; i++)
-                insert();
+        } else {
+            if (cnt == 100) {
+                insert(100);
+                cnt = 0;
+            } else if (cnt % 20 == 0) {
+                insert(10);
+            }
         }
 #ifdef DEBUG
-        cerr << TIME << " : " << ans << " " << source_vec.size() << endl;
+        cerr << TIME << " : " << ans << " " << source_vec.size() << " " << cnt << endl;
 #endif
     }
 }/*}}}*/
@@ -327,7 +339,7 @@ void deploy_server(char *topo[MAX_EDGE_NUM], int line_num,char *filename) {/*{{{
     ans = inf;
     init(topo);
 #ifndef DEBUG
-    limit_best_time = 10;
+    limit_best_time = 15;
 #else
     limit_best_time = 15;
 #endif
