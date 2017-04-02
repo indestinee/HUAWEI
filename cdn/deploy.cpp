@@ -6,7 +6,7 @@
 #include <string>
 #include <iostream>
 using namespace std;
-#define DEBUG
+//#define DEBUG
 #define prev prevDSJAIOIOWD
 #define TIME (double(clock())/double(CLOCKS_PER_SEC))
 const int maxm = 210000, inf = 0x63636363, maxn = 4024, my_favority_number = 91203;
@@ -272,6 +272,7 @@ inline void best_out() {/*{{{*/
     }
 }/*}}}*/
 inline void insert(int num = 1) {/*{{{*/
+    num = max(num, 1);
     sort(rest_vec.begin(), rest_vec.end(), cmp2);
     int random =  num >> 1, well = 0, good = num - random - well;
     good = min(num >> 2, 100), random = num - good;
@@ -305,6 +306,7 @@ inline void insert(int num = 1) {/*{{{*/
     }
 }/*}}}*/
 inline void pop_back(int num = 1) {/*{{{*/
+    num = max(1, num);
     while (num-- && !source_vec.empty()) {
         rest_vec.push_back(*source_vec.rbegin());
         source_vec.pop_back();
@@ -338,21 +340,19 @@ void work_iterator() {/*{{{*/
     while (TIME < 88) {
         int res = work();
         if (res == -1) {
-            insert(10);
+            insert(source_vec.size() * 0.10);
         } else {
             if (res == 0)
                 cnt++;
             sort(source_vec.begin(), source_vec.end(), cmp1);
-            pop_back(5);
+            pop_back(source_vec.size() * 0.05);
         }
         if (res == 1) {
             cnt = 0;
         } else {
-            if (cnt == 50) {
-                insert(100);
+            if (cnt == 30) {
+                insert(source_vec.size() * 0.3);
                 cnt = 0;
-            } else if (cnt % 20 == 0) {
-                insert(10);
             }
         }
 #ifdef DEBUG
