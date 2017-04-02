@@ -9,7 +9,7 @@ using namespace std;
 #define prev prevDSJAIOIOWD
 #define TIME (double(clock())/double(CLOCKS_PER_SEC))
 const int maxm = 210000, inf = 0x63636363, maxn = 4024, my_favority_number = 91203;
-int node_num, edge_num, sink_num, server_cost, totle_flow, ans, source, sink, nume, flow, used, limit_del_some_sink, limit_sink_random, limit_random_high_out_flow, limit_random, st[maxm], ed[maxm], limit[maxm], cost[maxm], sink_node[maxn], father[maxn], need[maxn], g[maxn], dist[maxn], prev[maxn], pree[maxn], vis[maxn], out_flow[maxn], id[maxn], que[maxn], qst, qed;
+int node_num, edge_num, sink_num, server_cost, totle_flow, ans, source, sink, nume, flow, used, limit_del_some_sink, limit_sink_random, limit_random_high_out_flow, limit_random, st[maxm], ed[maxm], limit[maxm], cost[maxm], sink_node[maxn], father[maxn], need[maxn], g[maxn], dist[maxn], prev[maxn], pree[maxn], vis[maxn], out_flow[maxn], id[maxn], que[maxn], qst, qed, limit_best_time;
 string res;
 vector<int> random_pick, out, source_vec;
 bool inque[maxn];
@@ -301,6 +301,17 @@ inline void del_some_sink() {/*{{{*/
         }
     }
 }/*}}}*/
+inline void best_out() {
+    addsource();
+    sort(source_vec.begin(), source_vec.end(), cmp);
+    while (!source_vec.empty()) {
+        work();
+        source_vec.pop_back();
+        if (TIME >= limit_best_time)
+            break;
+    }
+}
+//#define DEBUG
 void deploy_server(char *topo[MAX_EDGE_NUM], int line_num,char *filename) {/*{{{*/
     ans = inf;
     srand(time(0) + clock() + my_favority_number);
@@ -308,34 +319,52 @@ void deploy_server(char *topo[MAX_EDGE_NUM], int line_num,char *filename) {/*{{{
     for (int i = 0; i < node_num; i++)
         random_pick.push_back(i);
     random_shuffle(random_pick.begin(), random_pick.end());
-    limit_random_high_out_flow = 18;
-    limit_del_some_sink = 38;
-    limit_sink_random = 58;
+#ifndef DEBUG
+    limit_best_time = 30;
+    limit_random_high_out_flow = 45;
+    limit_del_some_sink = 60;
+    limit_sink_random = 75;
     limit_random = 88;
+#else
+    limit_best_time = 10;
+    limit_random_high_out_flow = 13;
+    limit_del_some_sink = 15;
+    limit_sink_random = 17;
+    limit_random = 19;
+#endif
     /*  choose all sink node    */
-    addsource();
-    work();
-//        cerr << ans << " " << TIME << endl;
-
+    best_out();
+#ifdef DEBUG
+    cerr << ans << " " << TIME << endl;
+#endif
 
     /*  choose high_out_flow node   */
     random_high_out_flow();
-//        cerr << ans << " " << TIME << endl;
+#ifdef DEBUG
+    cerr << ans << " " << TIME << endl;
+#endif
 
     /*  del some sink node  */
     while (true && TIME <= limit_del_some_sink)
         del_some_sink();
+#ifdef DEBUG
+    cerr << ans << " " << TIME << endl;
+#endif
 //        cerr << ans << " " << TIME << endl;
 
-    /*  random choose sink node */
     while (true && TIME <= limit_sink_random)
         sink_random();
-//        cerr << ans << " " << TIME << endl;
+#ifdef DEBUG
+    cerr << ans << " " << TIME << endl;
+#endif
 
     /*  random choose   */
     while (true && TIME <= limit_random)
         random_addsource();
-//        cerr << ans << " " << TIME << endl;
+#ifdef DEBUG
+    cerr << ans << " " << TIME << endl;
+#endif
+
 
     if (*res.rbegin() == '\n')
         res.pop_back();
