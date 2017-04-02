@@ -9,7 +9,7 @@ using namespace std;
 #define prev prevDSJAIOIOWD
 #define TIME (double(clock())/double(CLOCKS_PER_SEC))
 const int maxm = 210000, inf = 0x63636363, maxn = 4024, my_favority_number = 91203;
-int node_num, edge_num, sink_num, server_cost, totle_flow, ans, source, sink, nume, flow, used, limit_del_some_sink, limit_sink_random, limit_random_high_out_flow, limit_random, st[maxm], ed[maxm], limit[maxm], cost[maxm], sink_node[maxn], father[maxn], need[maxn], g[maxn], dist[maxn], prev[maxn], pree[maxn], vis[maxn], out_flow[maxn], id[maxn], que[maxn], qst, qed, limit_best_time;
+int node_num, edge_num, sink_num, server_cost, totle_flow, ans, source, sink, nume, flow, used, limit_del_some_sink, limit_sink_random, limit_random_high_out_flow, limit_random, st[maxm], ed[maxm], limit[maxm], cost[maxm], sink_node[maxn], father[maxn], need[maxn], g[maxn], dist[maxn], prev[maxn], pree[maxn], vis[maxn], out_flow[maxn], id[maxn], que[maxn], qst, qed, limit_best_time, go_sink[maxn], cmpp[maxn];
 string res;
 vector<int> random_pick, out, source_vec;
 bool inque[maxn];
@@ -26,6 +26,7 @@ inline void init(char *topo[MAX_EDGE_NUM]) {/*{{{*/
         sscanf(topo[i + 5 + edge_num], "%d%d%d", &sink_node[i], &father[i], &need[i]);
         totle_flow += need[i];
         out_flow[father[i]] += need[i];
+        go_sink[father[i]] += need[i];
     }
 }/*}}}*/
 class edge{/*{{{*/
@@ -116,7 +117,7 @@ int min_cost_flow() {/*{{{*/
     while (spfa()) {
         cur += argument();
         if (cur + used * server_cost >= ans)
-            return inf;
+            return inf - 1;
     }
     return (flow == totle_flow) ? cur : inf;
 }
@@ -301,14 +302,49 @@ inline void del_some_sink() {/*{{{*/
         }
     }
 }/*}}}*/
+inline int best_work() {/*{{{*/
+    int totle = 0;
+    for (auto i: source_vec)
+        totle += out_flow[i];
+    if (totle < totle_flow)
+        return -1;
+    build_edge();
+    used = 0;
+    memset(vis, 0, sizeof vis);
+    int tmp = min_cost_flow();
+    if (tmp == inf)
+        return -1;
+    tmp += used * server_cost;
+    if (tmp < ans) {
+        ans = tmp;
+        update(res);
+        return 1;
+    }
+    return 0;
+}/*}}}*/
+double rate = 0;
+bool cmp1(const int &x, const int &y) {
+    return cmpp[x] > cmpp[y];
+}
 inline void best_out() {
-    addsource();
-    sort(source_vec.begin(), source_vec.end(), cmp);
-    while (!source_vec.empty()) {
-        work();
-        source_vec.pop_back();
-        if (TIME >= limit_best_time)
-            break;
+    double rate_now = 0, rate = rate_now;
+    while (TIME <= limit_best_time) {
+        rate_now = double(rand()) / double(RAND_MAX) * 2.0 - 1;
+        addsource();
+        for (auto i: source_vec)
+            cmpp[i] = out_flow[i] - rate * go_sink[i];
+        sort(source_vec.begin(), source_vec.end(), cmp1);
+        int cnt = source_vec.size();
+        while (!source_vec.empty()) {
+            if (best_work() == -1)
+                break;
+            source_vec.pop_back();
+            cnt--;
+            if (TIME >= limit_best_time)
+                break;
+        }
+//        cerr << "rate " << rate << "  " << ans << endl;
+        rate = rate_now;
     }
 }
 //#define DEBUG
@@ -320,13 +356,13 @@ void deploy_server(char *topo[MAX_EDGE_NUM], int line_num,char *filename) {/*{{{
         random_pick.push_back(i);
     random_shuffle(random_pick.begin(), random_pick.end());
 #ifndef DEBUG
-    limit_best_time = 30;
-    limit_random_high_out_flow = 45;
-    limit_del_some_sink = 60;
-    limit_sink_random = 75;
+    limit_best_time = 80;
+    limit_random_high_out_flow = 82;
+    limit_del_some_sink = 84;
+    limit_sink_random = 86;
     limit_random = 88;
 #else
-    limit_best_time = 10;
+    limit_best_time = 40;
     limit_random_high_out_flow = 13;
     limit_del_some_sink = 15;
     limit_sink_random = 17;
