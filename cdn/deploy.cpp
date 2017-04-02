@@ -6,14 +6,32 @@
 #include <string>
 #include <iostream>
 using namespace std;
+//#define DEBUG
 #define prev prevDSJAIOIOWD
 #define TIME (double(clock())/double(CLOCKS_PER_SEC))
 const int maxm = 210000, inf = 0x63636363, maxn = 4024, my_favority_number = 91203;
-int node_num, edge_num, sink_num, server_cost, totle_flow, ans, source, sink, nume, flow, used, limit_del_some_sink, limit_sink_random, limit_random_high_out_flow, limit_random, st[maxm], ed[maxm], limit[maxm], cost[maxm], sink_node[maxn], father[maxn], need[maxn], g[maxn], dist[maxn], prev[maxn], pree[maxn], vis[maxn], out_flow[maxn], id[maxn], que[maxn], qst, qed, limit_best_time, go_sink[maxn], cmpp[maxn];
+int node_num, edge_num, sink_num, server_cost, totle_flow, ans, source, sink, nume, flow, used, st[maxm], ed[maxm], limit[maxm], cost[maxm], sink_node[maxn], father[maxn], need[maxn], g[maxn], dist[maxn], prev[maxn], pree[maxn], vis[maxn], out_flow[maxn], id[maxn], que[maxn], qst, qed, limit_best_time, each_flow[maxn];
 string res;
-vector<int> random_pick, out, source_vec;
+vector<int> random_pick, out, source_vec, rest_vec, best_vec;
 bool inque[maxn];
 char buff[1 << 20];
+class edge{/*{{{*/
+public:
+    edge () { }
+    edge (const int &v, const int &f, const int &w, const int &nxt): v(v), f(f), w(w), nxt(nxt) { }
+    int v, f, w, nxt;
+} e[maxm];/*}}}*/
+inline string itoa(int x) {/*{{{*/
+    if (x == 0)
+        return "0";
+    string ret = "";
+    while (x) {
+        ret += char(x % 10 + '0');
+        x /= 10;
+    }
+    reverse(ret.begin(), ret.end());
+    return ret;
+}/*}}}*/
 inline void init(char *topo[MAX_EDGE_NUM]) {/*{{{*/
 	sscanf(topo[0], "%d%d%d", &node_num, &edge_num, &sink_num);
     sscanf(topo[2], "%d", &server_cost);
@@ -26,17 +44,10 @@ inline void init(char *topo[MAX_EDGE_NUM]) {/*{{{*/
         sscanf(topo[i + 5 + edge_num], "%d%d%d", &sink_node[i], &father[i], &need[i]);
         totle_flow += need[i];
         out_flow[father[i]] += need[i];
-        go_sink[father[i]] += need[i];
     }
 }/*}}}*/
-class edge{/*{{{*/
-public:
-    edge () { }
-    edge (const int &v, const int &f, const int &w, const int &nxt): v(v), f(f), w(w), nxt(nxt) { }
-    int v, f, w, nxt;
-} e[maxm];/*}}}*/
 inline void addedge(const int &u, const int &v, const int &c, const int &w) {/*{{{*/
-    if (w > ans || w > server_cost)
+    if (w > server_cost)
         return;
     e[++nume] = edge(v, c, w, g[u]);
 	g[u] = nume;
@@ -105,6 +116,11 @@ inline int argument() {/*{{{*/
     while (u != source) {
         e[pree[u]].f -= delta;
         e[pree[u] ^ 1].f += delta;
+        if (pree[u] & 1) {
+            each_flow[prev[u]] -= delta;
+        } else {
+            each_flow[prev[u]] += delta;
+        }
         if (prev[u] == source && !vis[u])
             used += (vis[u] = 1);
         u = prev[u];
@@ -155,17 +171,6 @@ inline bool bfs() {/*{{{*/
     //        que.pop();
     return dist[sink] > 0;
 }/*}}}*/
-inline string itoa(int x) {/*{{{*/
-    if (x == 0)
-        return "0";
-    string ret = "";
-    while (x) {
-        ret += char(x % 10 + '0');
-        x /= 10;
-    }
-    reverse(ret.begin(), ret.end());
-    return ret;
-}/*}}}*/
 inline string find() {/*{{{*/
     string ret = "";
     int u = prev[sink], cut = dist[sink];
@@ -201,108 +206,13 @@ inline void addsource() {/*{{{*/
     for (int i = 0; i < sink_num; i++)
         source_vec.push_back(father[i]);
 }/*}}}*/
-inline void random(const int &x) {/*{{{*/
-    for (int i = 0; i < x; i++) {
-        if (i == node_num)
-            continue;
-        int x = rand() % (node_num - i) + i;
-        swap(random_pick[i], random_pick[x]);
-    }
-}/*}}}*/
-inline void rand_add_source(const int &m) {/*{{{*/
-    random(m);
-    source_vec.clear();
-    for (int i = 0; i < m; i++)
-        source_vec.push_back(random_pick[i]);
-}/*}}}*/
-inline bool work(int flag = 0) {/*{{{*/
-    if (flag) {
-        random(flag);
-        rand_add_source(flag);
-    }
-    int totle = 0;
-    for (auto i: source_vec)
-        totle += out_flow[i];
-    if (totle < totle_flow)
-        return false;
-    build_edge();
-    used = 0;
-    memset(vis, 0, sizeof vis);
-    int tmp = min_cost_flow();
-    tmp += used * server_cost;
-    if (tmp < ans) {
-        ans = tmp;
-        update(res);
-        return true;
-    }
-    return false;
-}/*}}}*/
-inline void sink_random() {/*{{{*/
-    addsource();
-    random_shuffle(source_vec.begin(), source_vec.end());
-    int cnt = 0;
-    while (!source_vec.empty()) {
-        source_vec.pop_back();
-        if (TIME > limit_sink_random)
-            break;
-        if (!work()) {
-            if (++cnt == 3)
-                break;
-        } else {
-            cnt = 0;
-        }
-    }
-}/*}}}*/
-inline void random_addsource() {/*{{{*/
-    for (int i = max(0, sink_num - 10); i <= min(node_num, sink_num + 10); i++) {
-        if (TIME > limit_random)
-            break;
-        work(i);
-    }
-}/*}}}*/
-inline int cmp(const int &a, const int &b) {/*{{{*/
+inline bool cmp(const int &a, const int &b) {/*{{{*/
     return out_flow[a] > out_flow[b];
 }/*}}}*/
-inline void random_high_out_flow() {/*{{{*/
-    for (int i = 0; i < node_num; i++)
-        id[i] = i;
-    sort(id, id + node_num, cmp);
-    source_vec.clear();
-    int sum = 0;
-    for (int i = 0; i < node_num; i++)  {
-        source_vec.push_back(id[i]);
-        sum += out_flow[id[i]];
-        if (sum < totle_flow)
-            continue;
-        work();
-        //cerr << ans << endl;
-        if (TIME > limit_random_high_out_flow)
-            break;
-    }
+inline bool cmp1(const int &a, const int &b) {/*{{{*/
+    return each_flow[a] > each_flow[b];
 }/*}}}*/
-inline void del_some_sink() {/*{{{*/
-    for (int j = 0; j < sink_num; j++) {
-        if (TIME > limit_del_some_sink)
-            return;
-        source_vec.clear();
-        for (int i = 0; i < sink_num; i++)
-            if (i != j)
-                source_vec.push_back(father[i]);
-        work();
-    }
-    for (int j = 0; j < sink_num; j++) {
-        for (int k = j + 1; k < sink_num; k++) {
-            if (TIME > limit_del_some_sink)
-                return;
-            source_vec.clear();
-            for (int i = 0; i < sink_num; i++)
-                if (i != j && i != k)
-                    source_vec.push_back(father[i]);
-            work();
-        }
-    }
-}/*}}}*/
-inline int best_work() {/*{{{*/
+inline int work() {/*{{{*/
     int totle = 0;
     for (auto i: source_vec)
         totle += out_flow[i];
@@ -311,6 +221,7 @@ inline int best_work() {/*{{{*/
     build_edge();
     used = 0;
     memset(vis, 0, sizeof vis);
+    memset(each_flow, 0, sizeof each_flow);
     int tmp = min_cost_flow();
     if (tmp == inf)
         return -1;
@@ -322,84 +233,82 @@ inline int best_work() {/*{{{*/
     }
     return 0;
 }/*}}}*/
-double rate = 0;
-bool cmp1(const int &x, const int &y) {
-    return cmpp[x] > cmpp[y];
-}
-inline void best_out() {
-    double rate_now = 0, rate = rate_now;
-    while (TIME <= limit_best_time) {
-        rate_now = double(rand()) / double(RAND_MAX) * 2.0 - 1;
-        addsource();
-        for (auto i: source_vec)
-            cmpp[i] = out_flow[i] - rate * go_sink[i];
-        sort(source_vec.begin(), source_vec.end(), cmp1);
-        int cnt = source_vec.size();
-        while (!source_vec.empty()) {
-            if (best_work() == -1)
-                break;
-            source_vec.pop_back();
-            cnt--;
-            if (TIME >= limit_best_time)
-                break;
-        }
-//        cerr << "rate " << rate << "  " << ans << endl;
-        rate = rate_now;
+inline void best_out() {/*{{{*/
+    addsource();
+    sort(source_vec.begin(), source_vec.end(), cmp);
+    int cnt = source_vec.size();
+    while (!source_vec.empty()) {
+        int res = work();
+#ifdef DEBUG
+        cerr << TIME << " " << ans << " " << source_vec.size() << " " << endl;
+#endif
+        if (res == -1)
+            break;
+        if (res == 1)
+            best_vec = source_vec;
+        source_vec.pop_back();
+        cnt--;
+        if (TIME >= limit_best_time)
+            break;
     }
-}
-//#define DEBUG
-void deploy_server(char *topo[MAX_EDGE_NUM], int line_num,char *filename) {/*{{{*/
-    ans = inf;
-    srand(time(0) + clock() + my_favority_number);
-    init(topo);
+}/*}}}*/
+inline void insert(int flag = 0) {/*{{{*/
+    if (rest_vec.size() == 0)
+        return;
+    source_vec.push_back(*rest_vec.rbegin());
+    rest_vec.pop_back();
+    if (flag && rest_vec.size() > 1) {
+        int x = rand() % rest_vec.size();
+        swap(rest_vec[x], rest_vec[rest_vec.size() - 1]);
+    }
+}/*}}}*/
+inline void pop_back() {/*{{{*/
+    if (source_vec.size() == 0)
+        return;
+    rest_vec.push_back(*source_vec.rbegin());
+    source_vec.pop_back();
+    if (rest_vec.size() > 1) {
+        int x = rand() % rest_vec.size();
+        swap(rest_vec[x], rest_vec[rest_vec.size() - 1]);
+    }
+}/*}}}*/
+void work_iterator() {/*{{{*/
     for (int i = 0; i < node_num; i++)
-        random_pick.push_back(i);
-    random_shuffle(random_pick.begin(), random_pick.end());
+        rest_vec.push_back(i);
+    //random_shuffle(rest_vec.begin(), rest_vec.end());
+    sort(rest_vec.begin(), rest_vec.end(), cmp);
+    reverse(rest_vec.begin(), rest_vec.end());
+
+
+    for (int i = 0; i < sink_num; i++)
+        insert();
+    while (TIME < 88) {
+        if (work() == -1) {
+            insert(1);
+        } else {
+            sort(source_vec.begin(), source_vec.end(), cmp1);
+            pop_back();
+        }
+#ifdef DEBUG
+        cerr << TIME << " : " << ans << " " << source_vec.size() << endl;
+#endif
+    }
+}/*}}}*/
+void deploy_server(char *topo[MAX_EDGE_NUM], int line_num,char *filename) {/*{{{*/
+    srand(time(0) + clock() + my_favority_number);
+    ans = inf;
+    init(topo);
 #ifndef DEBUG
-    limit_best_time = 80;
-    limit_random_high_out_flow = 82;
-    limit_del_some_sink = 84;
-    limit_sink_random = 86;
-    limit_random = 88;
+    limit_best_time = 10;
 #else
     limit_best_time = 40;
-    limit_random_high_out_flow = 13;
-    limit_del_some_sink = 15;
-    limit_sink_random = 17;
-    limit_random = 19;
 #endif
-    /*  choose all sink node    */
+
     best_out();
 #ifdef DEBUG
-    cerr << ans << " " << TIME << endl;
+    cerr << ans << " " << TIME << " " << server_cost * sink_num << " " << server_cost << "  "<< sink_num << endl;
 #endif
-
-    /*  choose high_out_flow node   */
-    random_high_out_flow();
-#ifdef DEBUG
-    cerr << ans << " " << TIME << endl;
-#endif
-
-    /*  del some sink node  */
-    while (true && TIME <= limit_del_some_sink)
-        del_some_sink();
-#ifdef DEBUG
-    cerr << ans << " " << TIME << endl;
-#endif
-//        cerr << ans << " " << TIME << endl;
-
-    while (true && TIME <= limit_sink_random)
-        sink_random();
-#ifdef DEBUG
-    cerr << ans << " " << TIME << endl;
-#endif
-
-    /*  random choose   */
-    while (true && TIME <= limit_random)
-        random_addsource();
-#ifdef DEBUG
-    cerr << ans << " " << TIME << endl;
-#endif
+    work_iterator();
 
 
     if (*res.rbegin() == '\n')
