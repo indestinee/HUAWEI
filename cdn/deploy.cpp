@@ -365,13 +365,16 @@ inline void work_iterator() {/*{{{*/
             if (res == 0)
                 cnt++;
             sort(source_vec.begin(), source_vec.end(), cmp1);
-            pop_back(source_vec.size() * 0.05);
+            pop_back(source_vec.size() * 0.02);
         }
         if (res == 1) {
             cnt = 0;
         } else {
             if (cnt == 30) {
-                insert(max(20, int(source_vec.size() * 0.3)));
+                int fresh = max(20,  int(source_vec.size() * 0.25));
+                pop_back(fresh);
+                insert(fresh * 0.80);
+                add_some_sink(fresh * 0.20);
                 cnt = 0;
             }
         }
