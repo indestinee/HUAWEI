@@ -48,16 +48,6 @@ inline void init(char *topo[MAX_EDGE_NUM]) {/*{{{*/
         out_flow[father[i]] += need[i];
         is_near_sink[father[i]] = 1;
     }
-    for (int i = 0; i < edge_num; i++) {
-        double r = 1;
-        for (int j = g[i]; j; j = e[j].nxt) {
-            if (j >= node_num && j < source) {
-                r = rate;
-                break;
-            }
-        }
-        score[i] = out_flow[i] * rate;
-    }
 }/*}}}*/
 inline void addedge(const int &u, const int &v, const int &c, const int &w) {/*{{{*/
     if (w > server_cost)
@@ -360,7 +350,7 @@ inline void work_iterator() {/*{{{*/
         
         int res = work();
         if (res == -1) {
-            insert(source_vec.size() * 0.10);
+            add_some_sink(source_vec.size() * 0.2);
         } else {
             if (res == 0)
                 cnt++;
@@ -370,16 +360,18 @@ inline void work_iterator() {/*{{{*/
         if (res == 1) {
             cnt = 0;
         } else {
-            if (cnt == 30) {
-                int fresh = max(20,  int(source_vec.size() * 0.25));
-                pop_back(fresh);
-                insert(fresh * 0.80);
-                add_some_sink(fresh * 0.20);
-                cnt = 0;
-            }
+//            if (cnt == 30) {
+//                int fresh = max(20,  int(source_vec.size() * 0.25));
+                //pop_back(fresh);
+                //insert(fresh * 0.80);
+//                add_some_sink(fresh * 0.80);
+//                cnt = 0;
+//            }
         }
-        if (double(source_vec.size()) / last_sink <= 0.8)
-            add_some_sink(last_sink * 0.5);
+        if (double(source_vec.size()) / last_sink <= 0.8) {
+            add_some_sink(last_sink * 0.21);
+            cnt = 0;
+        }
 #ifdef DEBUG
         cerr << TIME << " : " << ans << " " << source_vec.size() << " " << last_sink << " " << cnt << endl;
 #endif
@@ -398,7 +390,7 @@ void deploy_server(char *topo[MAX_EDGE_NUM], int line_num,char *filename) {/*{{{
 #endif
 
     best_out();
-     max_sink = ans / server_cost;
+    max_sink = ans / server_cost;
     
 #ifdef DEBUG
     cerr << ans << " " << TIME << " " << server_cost * sink_num << " " << server_cost << "  "<< sink_num << endl;
