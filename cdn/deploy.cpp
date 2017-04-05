@@ -350,28 +350,27 @@ inline void work_iterator() {/*{{{*/
         
         int res = work();
         if (res == -1) {
-            add_some_sink(source_vec.size() * 0.2);
+            add_some_sink(source_vec.size() * 0.10);
         } else {
             if (res == 0)
                 cnt++;
             sort(source_vec.begin(), source_vec.end(), cmp1);
-            pop_back(source_vec.size() * 0.02);
+            pop_back(source_vec.size() * 0.10);
         }
         if (res == 1) {
             cnt = 0;
         } else {
-//            if (cnt == 30) {
-//                int fresh = max(20,  int(source_vec.size() * 0.25));
-                //pop_back(fresh);
-                //insert(fresh * 0.80);
-//                add_some_sink(fresh * 0.80);
-//                cnt = 0;
-//            }
+            if (cnt == 10) {
+                int x = source_vec.size();
+                pop_back(x);
+                add_some_sink(last_sink);
+                cnt = 0;
+            }
         }
-        if (double(source_vec.size()) / last_sink <= 0.8) {
-            add_some_sink(last_sink * 0.21);
-            cnt = 0;
-        }
+//        if (double(source_vec.size()) / last_sink <= 0.8) {
+//            add_some_sink(last_sink * 0.21);
+//            cnt = 0;
+//        }
 #ifdef DEBUG
         cerr << TIME << " : " << ans << " " << source_vec.size() << " " << last_sink << " " << cnt << endl;
 #endif
