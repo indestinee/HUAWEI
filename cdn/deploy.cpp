@@ -7,12 +7,12 @@
 #include <string>
 #include <iostream>
 using namespace std;
-//#define DEBUG
+#define DEBUG
 #define prev prevDSJAIOIOWD
 #define TIME (double(clock())/double(CLOCKS_PER_SEC))
 const int maxm = 210000, inf = 0x63636363, maxn = 4024, my_favority_number = 91203;
 const double log_rand_max = log(RAND_MAX), rate = 1;
-int node_num, edge_num, sink_num, server_cost, totle_flow, ans, source, sink, nume, flow, used, st[maxm], ed[maxm], limit[maxm], cost[maxm], sink_node[maxn], father[maxn], need[maxn], g[maxn], dist[maxn], prev[maxn], pree[maxn], vis[maxn], out_flow[maxn], id[maxn], que[maxn], qst, qed, limit_best_time, each_flow[maxn], score[maxn], max_sink, is_near_sink[maxn], last_sink;
+int node_num, edge_num, sink_num, server_cost, totle_flow, ans, source, sink, nume, flow, used, st[maxm], ed[maxm], limit[maxm], cost[maxm], sink_node[maxn], father[maxn], need[maxn], g[maxn], dist[maxn], prev[maxn], pree[maxn], vis[maxn], out_flow[maxn], id[maxn], que[maxn], qst, qed, limit_best_time, each_flow[maxn], score[maxn], max_sink, is_near_sink[maxn], last_sink, tmp_vec[maxn], tmp_num;
 string res;
 vector<int> out, source_vec, rest_vec, best_vec, sink_vec;
 bool inque[maxn];
@@ -37,6 +37,7 @@ inline string itoa(int x) {/*{{{*/
 inline void init(char *topo[MAX_EDGE_NUM]) {/*{{{*/
 	sscanf(topo[0], "%d%d%d", &node_num, &edge_num, &sink_num);
     sscanf(topo[2], "%d", &server_cost);
+    int TMP = 0;
     for (int i = 0; i < edge_num; i++) {
         sscanf(topo[i + 4], "%d%d%d%d", &st[i], &ed[i], &limit[i], &cost[i]);
         out_flow[st[i]] += limit[i];
@@ -47,6 +48,19 @@ inline void init(char *topo[MAX_EDGE_NUM]) {/*{{{*/
         totle_flow += need[i];
         out_flow[father[i]] += need[i];
         is_near_sink[father[i]] = 1;
+    }
+    for (int i = 0; i < node_num; i++)
+        tmp_vec[tmp_num++] = out_flow[i];
+    sort(tmp_vec, tmp_vec + tmp_num);
+    TMP = tmp_vec[int(tmp_num * 0.98)];
+    if (false) {
+        for (int i = 0; i < edge_num; i++) {
+            if (is_near_sink[ed[i]] && !is_near_sink[st[i]] && out_flow[st[i]] > TMP)
+                is_near_sink[st[i]] = 2;
+            if (!is_near_sink[ed[i]] && is_near_sink[st[i]] && out_flow[ed[i]] > TMP)
+                is_near_sink[ed[i]] = 2;
+
+        }
     }
 }/*}}}*/
 inline void addedge(const int &u, const int &v, const int &c, const int &w) {/*{{{*/
@@ -340,7 +354,7 @@ inline void work_iterator() {/*{{{*/
         if (id < int(best_vec.size()) && i == best_vec[id]) {
             source_vec.push_back(i);
             id++;
-        } else {
+        } else if (is_near_sink[i]) {
             rest_vec.push_back(i);   
         }
     }
@@ -349,13 +363,14 @@ inline void work_iterator() {/*{{{*/
     while (TIME < 88) {
         
         int res = work();
-        if (res == -1) {
-            add_some_sink(source_vec.size() * 0.10);
+        if (res ==-1) {
+            add_some_sink(source_vec.size() * 0.05);
+            cnt++;
         } else {
             if (res == 0)
                 cnt++;
             sort(source_vec.begin(), source_vec.end(), cmp1);
-            pop_back(source_vec.size() * 0.10);
+            pop_back(source_vec.size() * 0.05);
         }
         if (res == 1) {
             cnt = 0;
